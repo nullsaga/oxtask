@@ -2,9 +2,11 @@ package tcp
 
 import (
 	"bufio"
+	"errors"
 	"net"
 	"strings"
 	"testing"
+	"time"
 )
 
 func startTestServer(t *testing.T) (string, func()) {
@@ -65,7 +67,60 @@ func TestCanBroadcast(t *testing.T) {
 	}
 }
 
-func TestMaxBytesNotReached(t *testing.T) {
+func TestDownloadedMaxBytesNotReached(t *testing.T) {
+	addr, cleanup := startTestServer(t)
+	defer cleanup()
+
+	sender := connectClient(t, addr)
+	defer sender.Close()
+
+	receiver := connectClient(t, addr)
+	defer receiver.Close()
+	expectedMsg := "hello world\n"
+
+	_, err := sender.Write([]byte(expectedMsg))
+	if err != nil {
+		t.Fatalf("sender failed to write: %v", err)
+	}
+
+	r := bufio.NewReader(receiver)
+	recvMsg, err := r.ReadString('\n')
+	if err != nil {
+		t.Fatalf("receiver read failed: %v", err)
+	}
+
+	if recvMsg != expectedMsg {
+		t.Fatalf("receiver got %q, want %q", recvMsg, expectedMsg)
+	}
+}
+
+func TestDownloadedMaxBytesReached(t *testing.T) {
+	addr, cleanup := startTestServer(t)
+	defer cleanup()
+
+	sender := connectClient(t, addr)
+	defer sender.Close()
+
+	receiver := connectClient(t, addr)
+	receiver.SetReadDeadline(time.Now().Add(1 * time.Second))
+	defer receiver.Close()
+
+	_, err := sender.Write([]byte(strings.Repeat("t", 101) + "\n"))
+	if err != nil {
+		t.Fatalf("sender failed to write: %v", err)
+	}
+
+	r := bufio.NewReader(receiver)
+	_, err = r.ReadString('\n')
+	var netErr net.Error
+	if err != nil {
+		if !errors.As(err, &netErr) && netErr.Timeout() {
+			t.Fatalf("read failed unexpectedly: %v", err)
+		}
+	}
+}
+
+func TestUploadedMaxBytesNotReached(t *testing.T) {
 	addr, cleanup := startTestServer(t)
 	defer cleanup()
 
@@ -90,7 +145,7 @@ func TestMaxBytesNotReached(t *testing.T) {
 	}
 }
 
-func TestMaxBytesReached(t *testing.T) {
+func TestUploadedMaxBytesReached(t *testing.T) {
 	addr, cleanup := startTestServer(t)
 	defer cleanup()
 
