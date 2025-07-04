@@ -54,9 +54,9 @@ func (s *Server) handleClientConn(c *client) {
 			break
 		}
 
-		c.incrementSentBytes(len(msg))
-		if c.isBandwidthLimitExceeded() {
-			_, _ = c.conn.Write([]byte("Disconnected due to exceeding bandwidth limit\n"))
+		c.incrementUploadedBytes(len(msg))
+		if c.isUploadedBytesLimitExceeded() {
+			_, _ = c.conn.Write([]byte("Disconnected due to exceeding uploaded bytes limit\n"))
 			break
 		}
 		s.broadcast(c, msg)
@@ -73,9 +73,9 @@ func (s *Server) write(c *client) {
 			break
 		}
 
-		c.incrementSentBytes(n)
-		if c.isBandwidthLimitExceeded() {
-			_, _ = c.conn.Write([]byte("Disconnected due to exceeding bandwidth limit\n"))
+		c.incrementDownloadedBytes(n)
+		if c.isDownloadBytesLimitExceeded() {
+			_, _ = c.conn.Write([]byte("Disconnected due to exceeding downloaded bytes limit\n"))
 			break
 		}
 	}

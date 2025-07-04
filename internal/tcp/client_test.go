@@ -17,8 +17,12 @@ func TestNewClient(t *testing.T) {
 		t.Errorf("expected bandwidth limit 100, got %d", c.maxBytes)
 	}
 
-	if c.sentBytes != 0 {
-		t.Errorf("expected sentbytes 0, got %d", c.sentBytes)
+	if c.uploadedBytes != 0 {
+		t.Errorf("expected uploadedBytes 0, got %d", c.uploadedBytes)
+	}
+
+	if c.downloadedBytes != 0 {
+		t.Errorf("expected downloadedBytes 0, got %d", c.downloadedBytes)
 	}
 
 	if c.sendCh == nil {
@@ -37,19 +41,19 @@ func TestCanLimitBandwidth(t *testing.T) {
 
 	c := newClient(clientConn, 100)
 
-	c.incrementSentBytes(10)
-	if c.isBandwidthLimitExceeded() {
-		t.Errorf("expected bandwidth limit not to be exceeded (limit: %d, used: %d), but it was", c.maxBytes, c.sentBytes)
+	c.incrementUploadedBytes(10)
+	if c.isUploadedBytesLimitExceeded() {
+		t.Errorf("expected bandwidth limit not to be exceeded (limit: %d, used: %d), but it was", c.maxBytes, c.uploadedBytes)
 	}
 
-	c.incrementSentBytes(89)
-	if c.isBandwidthLimitExceeded() {
-		t.Errorf("expected bandwidth limit not to be exceeded after adding 99 total bytes (limit: %d, used: %d)", c.maxBytes, c.sentBytes)
+	c.incrementUploadedBytes(89)
+	if c.isUploadedBytesLimitExceeded() {
+		t.Errorf("expected bandwidth limit not to be exceeded after adding 99 total bytes (limit: %d, used: %d)", c.maxBytes, c.uploadedBytes)
 	}
 
-	c.incrementSentBytes(1)
-	if !c.isBandwidthLimitExceeded() {
-		t.Errorf("expected bandwidth limit to be exceeded after adding 100 total bytes (limit: %d, used: %d)", c.maxBytes, c.sentBytes)
+	c.incrementUploadedBytes(1)
+	if !c.isUploadedBytesLimitExceeded() {
+		t.Errorf("expected bandwidth limit to be exceeded after adding 100 total bytes (limit: %d, used: %d)", c.maxBytes, c.uploadedBytes)
 	}
 }
 
@@ -64,11 +68,11 @@ func TestConcurrentIncrement(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			c.incrementSentBytes(10)
+			c.incrementUploadedBytes(10)
 		}()
 	}
 	wg.Wait()
-	if c.sentBytes != 1000 {
-		t.Errorf("expected sentBytes to be 1000, got %d", c.sentBytes)
+	if c.uploadedBytes != 1000 {
+		t.Errorf("expected sentBytes to be 1000, got %d", c.uploadedBytes)
 	}
 }

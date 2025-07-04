@@ -107,7 +107,7 @@ func TestMaxBytesReached(t *testing.T) {
 		t.Fatalf("expected disconnect message, but got error: %v", err)
 	}
 
-	expected := "Disconnected due to exceeding bandwidth limit\n"
+	expected := "Disconnected due to exceeding uploaded bytes limit\n"
 	if msg != expected {
 		t.Fatalf("expected message %q, got %q", expected, msg)
 	}
