@@ -34,7 +34,7 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-func TestCanLimitBandwidth(t *testing.T) {
+func TestCanLimitUploadedBytes(t *testing.T) {
 	clientConn, serverConn := net.Pipe()
 	defer clientConn.Close()
 	defer serverConn.Close()
@@ -43,17 +43,40 @@ func TestCanLimitBandwidth(t *testing.T) {
 
 	c.incrementUploadedBytes(10)
 	if c.isUploadedBytesLimitExceeded() {
-		t.Errorf("expected bandwidth limit not to be exceeded (limit: %d, used: %d), but it was", c.maxBytes, c.uploadedBytes)
+		t.Errorf("expected upload limit not to be exceeded (limit: %d, used: %d), but it was", c.maxBytes, c.uploadedBytes)
 	}
 
 	c.incrementUploadedBytes(89)
 	if c.isUploadedBytesLimitExceeded() {
-		t.Errorf("expected bandwidth limit not to be exceeded after adding 99 total bytes (limit: %d, used: %d)", c.maxBytes, c.uploadedBytes)
+		t.Errorf("expected upload limit not to be exceeded after adding 99 total bytes (limit: %d, used: %d)", c.maxBytes, c.uploadedBytes)
 	}
 
 	c.incrementUploadedBytes(1)
 	if !c.isUploadedBytesLimitExceeded() {
-		t.Errorf("expected bandwidth limit to be exceeded after adding 100 total bytes (limit: %d, used: %d)", c.maxBytes, c.uploadedBytes)
+		t.Errorf("expected upload limit to be exceeded after adding 100 total bytes (limit: %d, used: %d)", c.maxBytes, c.uploadedBytes)
+	}
+}
+
+func TestCanLimitDownloadBytes(t *testing.T) {
+	clientConn, serverConn := net.Pipe()
+	defer clientConn.Close()
+	defer serverConn.Close()
+
+	c := newClient(clientConn, 100)
+
+	c.incrementDownloadedBytes(10)
+	if c.isDownloadBytesLimitExceeded() {
+		t.Errorf("expected download limit not to be exceeded (limit: %d, used: %d), but it was", c.maxBytes, c.uploadedBytes)
+	}
+
+	c.incrementDownloadedBytes(89)
+	if c.isDownloadBytesLimitExceeded() {
+		t.Errorf("expected download limit not to be exceeded after adding 99 total bytes (limit: %d, used: %d)", c.maxBytes, c.uploadedBytes)
+	}
+
+	c.incrementDownloadedBytes(1)
+	if !c.isDownloadBytesLimitExceeded() {
+		t.Errorf("expected download limit to be exceeded after adding 100 total bytes (limit: %d, used: %d)", c.maxBytes, c.uploadedBytes)
 	}
 }
 
